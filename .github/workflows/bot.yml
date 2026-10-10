@@ -1,0 +1,50 @@
+name: XAUUSD signal bot
+
+on:
+  schedule:
+    # hər 5 dəqiqə, bazar ertəsi-cümə, 06:00-20:59 UTC (London + Nyu-York sessiyaları)
+    - cron: "*/5 6-20 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      test:
+        description: "Test rejimi: siqnal olmasa da status mesajı göndər (1/0)"
+        default: "1"
+      dry_run:
+        description: "Telegram-a göndərmə, yalnız logda göstər (1/0)"
+        default: "0"
+
+concurrency:
+  group: signal-bot
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # state.json (cooldown, açıq siqnallar, xəbər keşi) run-lar arasında saxlanır
+      - uses: actions/cache@v4
+        with:
+          path: state.json
+          key: bot-state-${{ github.run_id }}
+          restore-keys: bot-state-
+
+      - name: Run bot
+        env:
+          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MIN_SCORE: "65"
+          RR: "2"
+          TEST: ${{ github.event.inputs.test || '0' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
+        run: python bot.py
