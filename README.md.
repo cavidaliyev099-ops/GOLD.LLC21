@@ -1,0 +1,51 @@
+# XAU/USD Telegram siqnal botu
+
+Twelve Data-dan qiymət çəkir, Forex Factory-dən xəbərləri oxuyur, qaydalara uyğun siqnal tapanda
+Telegram-a şəkil (giriş, SL, TP ilə) və mətn göndərir. GitHub Actions-da pulsuz işləyir.
+
+## Quraşdırma
+
+1. Telegram-da `@BotFather` → `/newbot` → token al.
+2. Yaratdığın bota istənilən mesaj yaz, sonra brauzerdə aç:
+   `https://api.telegram.org/bot<TOKEN>/getUpdates`
+   Cavabdakı `"chat":{"id": ...}` rəqəmi sənin chat ID-ndir.
+3. twelvedata.com-da qeydiyyatdan keç və API key al.
+4. GitHub-da repo yarat, `bot.py`, `requirements.txt` və `.github/workflows/bot.yml` fayllarını yüklə.
+5. Repo → Settings → Secrets and variables → Actions → New repository secret.
+   Bu üç secret-i əlavə et:
+   - `TWELVEDATA_API_KEY`
+   - `TELEGRAM_BOT_TOKEN`
+   - `TELEGRAM_CHAT_ID`
+6. Repo → Actions → "XAUUSD signal bot" → Run workflow (test=1).
+   Telegram-a "Bot işləyir" mesajı gəlməlidir.
+
+## Qaydalar
+
+- 4H və 1H trend eyni istiqamətdə olmalıdır (məcburi)
+- VWMA 20 (HAHO): şam üstündədirsə yalnız BUY, altındadırsa yalnız SELL (məcburi)
+- Score 65 və yuxarı olanda siqnal verilir (100 üzərindən):
+  trend 20, EMA 20/50/100 10, VWMA 10, RSI 10, sweep 15, BOS 5,
+  trend xətti qırılması 10, volume profile 5, DXY 10, xəbər 5
+- DXY = EUR/USD-nin tərsi (proksi). DXY qalxırsa qızıl üçün mənfi, enirsə müsbət
+- SL/TP 1:2
+- Yüksək təsirli USD xəbərindən 30 dəq əvvəl və 30 dəq sonra siqnal verilmir
+- Siqnaldan sonra bot TP/SL vurulduğunu izləyib Telegram-a yazır
+
+## Ayarlar
+
+Workflow faylındakı `env` hissəsində dəyişdirilir:
+`MIN_SCORE`, `RR`, `COOLDOWN_MIN`, `MAX_SIGNALS_PER_DAY`,
+`ACTIVE_SESSIONS` (LNDN,NYAM,NYL,NYPM), `NEWS_IMPACT` (High və ya High,Medium),
+`NEWS_BLOCK_BEFORE_MIN`, `NEWS_BLOCK_AFTER_MIN`.
+
+## Məhdudiyyətlər
+
+- Trend xətti modulu ChartPrime TBT ilə eyni deyil, ona yaxın variantdır.
+- Volume profile real həcm yox, qiymət səviyyəsində keçirilən vaxta əsaslanır.
+- Forex Factory pulsuz feedində açıqlanan rəqəm (actual) yoxdur. Bot yalnız proqnoz və əvvəlki rəqəmi
+  müqayisə edib zəif gözlənti yazır, xəbər vaxtı isə pauza edir.
+- Twelve Data pulsuz plan: dəqiqədə 8, gündə 800 sorğu. Bot hər işə düşəndə 4 sorğu edir.
+- GitHub Actions cron-u bəzən bir neçə dəqiqə gecikir. `/status` kimi əmrlər bu variantda yoxdur.
+- Private repo-da Actions dəqiqələri məhduddur. Public repo-da limit yoxdur,
+  açarlar Secrets-də olduğu üçün görünmür.
+- Bu maliyyə məsləhəti deyil. Əvvəlcə bir neçə həftə yalnız siqnalları izlə, demo hesabda yoxla.
