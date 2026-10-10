@@ -572,14 +572,15 @@ def tg_post(method, **kw):
 
 
 def send(text):
-    print(text)
+    if DRY_RUN:
+        print(text)
     if not DRY_RUN:
         tg_post("sendMessage", json={"chat_id": TG_CHAT, "text": text})
 
 
 def send_photo(path, caption):
-    print(f"[ŞƏKİL: {path}] {caption}")
     if DRY_RUN:
+        print(f"[ŞƏKİL: {path}] {caption}")
         return
     with open(path, "rb") as f:
         tg_post("sendPhoto", data={"chat_id": TG_CHAT, "caption": caption[:1000]}, files={"photo": f})
